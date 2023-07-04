@@ -1,11 +1,12 @@
 #Requires AutoHotkey v2.0
-CoordMode "Mouse", "Screen"
 #Include function\get_admin_permission.ahk
 #Include function\get_input_state.ahk
 #SingleInstance Force
+CoordMode "Mouse", "Screen"
 
-script_name := SubStr(A_ScriptName, 1, RegExMatch(A_ScriptName, "\.") - 1)
-config_file := script_name "_config.ini"
+script_name := SubStr(A_ScriptName, 1, RegExMatch(A_ScriptName, "\.") - 1),
+    config_file := script_name "_config.ini"
+
 if (!FileExist(config_file)) {
     set_config(key, value) {
         IniWrite(value, config_file, "Config", key)
@@ -20,25 +21,28 @@ if (!FileExist(config_file)) {
     set_config("EN_Text", "英")
     set_config("offset_x", 50)
     set_config("offset_y", -80)
+    set_config("window_no_display", "Notepad.exe,")
 }
 get_config(key) {
-    try{
-        return IniRead("InputTip_config.ini", "Config", key)
-    }catch{
-        MsgBox("配置文件丢失，软件强制退出，请重启恢复配置文件")
+    try {
+        return IniRead(config_file, "Config", key)
+    } catch {
+        if (MsgBox("配置文件丢失，软件强制退出，是否重启以创建默认配置文件", , "0x4") = "yes") {
+            RunWait("cmd /c start " A_ScriptFullPath, , "Hide")
+        }
         ExitApp()
     }
 }
 get_admin_permisstion()
 
-Edge_width := A_ScreenWidth - 100, Edge_height := A_ScreenHeight - 200
+window_no_display := StrSplit(get_config("window_no_display"), ","), Edge_width := A_ScreenWidth - 100, Edge_height := A_ScreenHeight - 200
 
 makeGUi(Text) {
     make_gui := Gui("-Caption  AlwaysOnTop ToolWindow OwnDialogs +LastFound")
     make_gui.SetFont("s" get_config("font_size") " c" get_config("font_color") " w" get_config("font_weight") " q5", get_config("font_family"))
-    make_gui.BackColor := get_config("font_bgcolor")
-    make_gui.MarginX := "5"
-    make_gui.MarginY := "5"
+    make_gui.BackColor := get_config("font_bgcolor"),
+        make_gui.MarginX := "5",
+        make_gui.MarginY := "5"
     WinSetTransparent(get_config("windowTransparent"))
     make_gui.AddText(, Text)
     return make_gui
@@ -47,10 +51,18 @@ makeGUi(Text) {
 CNTipGui := makeGUi(get_config("CN_Text")), ENTipGUi := makeGUi(get_config("EN_Text"))
 
 while true {
-    Sleep(15), MouseGetPos(&Xpos, &Ypos)
-    InputState := get_input_state()
-    if (InputState = "null") {
-        ENTipGui.Hide(), CNTipGui.Hide()
+    Sleep(15)
+    MouseGetPos(&Xpos, &Ypos),
+        InputState := get_input_state(),
+        should_no_display := 0
+    for value in window_no_display {
+        if (WinActive("ahk_exe " value) || InputState = "null") {
+            ENTipGui.Hide(), CNTipGui.Hide()
+            should_no_display := 1
+            continue
+        }
+    }
+    if (should_no_display) {
         continue
     }
     if ((Xpos < 5) || (Xpos > Edge_width && Xpos < 3000)) {
