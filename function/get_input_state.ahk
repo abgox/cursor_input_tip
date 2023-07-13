@@ -18,7 +18,6 @@ get_input_state() {
         ; 0 >>> 英
         ; 1025 >>> 中
         ; 讯飞始终返回1025，暂无解决方案
-        ; return result
         return result
     } catch {
         return "null"

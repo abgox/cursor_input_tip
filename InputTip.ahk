@@ -1,8 +1,12 @@
 #Requires AutoHotkey v2.0
+;;; 提升性能
+ListLines(0) ; 忽略记录运行
+KeyHistory(0) ; 停用按键历史
+;;;
+#SingleInstance Force ; 允许脚本覆盖运行
+CoordMode "Mouse", "Screen" ; 鼠标坐标计算相对于屏幕
 #Include function\get_admin_permission.ahk
 #Include function\get_input_state.ahk
-#SingleInstance Force
-CoordMode "Mouse", "Screen"
 
 script_name := SubStr(A_ScriptName, 1, RegExMatch(A_ScriptName, "\.") - 1),
     config_file := script_name "_config.ini"
@@ -27,13 +31,11 @@ get_config(key) {
     try {
         return IniRead(config_file, "Config", key)
     } catch {
-        if (MsgBox("配置文件丢失，软件强制退出，是否重启以创建默认配置文件", , "0x4") = "yes") {
-            RunWait("cmd /c start " A_ScriptFullPath, , "Hide")
-        }
+        Run("cmd /c start " A_ScriptFullPath, , "Hide")
         ExitApp()
     }
 }
-get_admin_permisstion()
+get_admin_permisstion(A_ScriptName "_path")
 
 window_no_display := StrSplit(get_config("window_no_display"), ","), Edge_width := A_ScreenWidth - 100, Edge_height := A_ScreenHeight - 200
 
